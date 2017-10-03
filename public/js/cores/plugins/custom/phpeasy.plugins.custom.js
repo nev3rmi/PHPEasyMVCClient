@@ -1,0 +1,1 @@
+PHPEasy.Plugins.Custom = PHPEasy.Plugins.Custom || {};

@@ -1,0 +1,1 @@
+PHPEasy.Page = PHPEasy.Page || {};

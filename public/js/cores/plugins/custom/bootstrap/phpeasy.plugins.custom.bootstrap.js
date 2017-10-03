@@ -1,0 +1,1 @@
+PHPEasy.Plugins.Custom.Bootstrap = PHPEasy.Plugins.Custom.Bootstrap || {};

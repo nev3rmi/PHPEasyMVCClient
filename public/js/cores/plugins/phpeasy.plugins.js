@@ -1,0 +1,1 @@
+PHPEasy.Plugins = PHPEasy.Plugins || {};

@@ -1,0 +1,138 @@
+(function($) {
+    var currentStep = 0;
+    var form = $("#install");
+    var resultSummary = new Array();
+
+    // Get Current Step
+    $.post('/install/GetCurrentStep', {}, function(result) {
+        getCurrentStep = jQuery.parseJSON(result);
+        currentStep = getCurrentStep['step'];
+
+        form.validate({
+            errorPlacement: function errorPlacement(error, element) { element.before(error).before(' '); },
+            rules: {
+                confirm: {
+                    equalTo: "#password"
+                }
+            }
+        });
+
+        form.children("div").steps({
+            headerTag: "h3",
+            bodyTag: "fieldset",
+            transitionEffect: "slideLeft",
+            autoFocus: true,
+            forceMoveForward: true,
+            startIndex: currentStep,
+            onStepChanging: function(event, currentIndex, newIndex) {
+                // Allways allow previous action even if the current form is not valid!
+                if (currentIndex > newIndex) {
+                    return true;
+                }
+
+                // Needed in some cases if the user went back (clean up)
+                if (currentIndex < newIndex) {
+                    // To remove error styles
+                    form.find(".body:eq(" + newIndex + ") label.error").remove();
+                    form.find(".body:eq(" + newIndex + ") .error").removeClass("error");
+                }
+
+                // Slide 0 - Introduction Slide
+                if (currentIndex === 0 && resultSummary[0] == null) {
+                    resultSummary[0] = "Accept term and condition.......Success!";
+                }
+
+                // Slide 1 - License Slide
+                if (currentIndex === 1 && resultSummary[1] == null) {
+                    var data = new Array();
+                    $(".license-key-form").each(function() {
+                        data.push($(this).val())
+                    });
+                    var loadingDialog = PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Loading("Request to check license, please wait!");
+                    $.ajax({
+                        type: 'POST',
+                        url: '/install/CheckKeyLicenseWithServer',
+                        crossDomain: true,
+                        data: { key: data[0], ip: data[1], url: data[2] },
+                        dataType: 'json',
+                        success: function(responseData, textStatus, jqXHR) {
+                            obj = responseData;
+                            loadingDialog.setMessage("Fetching license result...");
+                            if (obj.result === 100) {
+                                loadingDialog.setMessage("Request to save key...");
+                                console.log("License: " + obj.message);
+                                $.post('/install/SaveKey', { key: obj.key }, function(result) {
+                                    obj = jQuery.parseJSON(result);
+                                    loadingDialog.setMessage("Saving key...");
+                                    if (obj.result === 101) {
+                                        resultSummary[1] = "License verify.......Success!";
+                                        loadingDialog.close();
+                                        console.log("Key: " + obj.message);
+                                        $(".license-key-form").prop('disabled', true);
+                                        // Go to next step
+                                        form.children("div").steps("setStep", 2);
+                                    } else {
+                                        loadingDialog.close();
+                                        PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Fail("Error " + obj.result + ": \n" + obj.message);
+                                        return false;
+                                    }
+                                });
+                            } else {
+                                loadingDialog.close();
+                                PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Fail("Error " + obj.result + ": \n" + obj.message);
+                                return false;
+                            }
+                        },
+                        error: function(responseData, textStatus, errorThrown) {
+                            loadingDialog.close();
+                            PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Fail("Error: \n Post Failed!");
+                            return false;
+                        }
+                    });
+                    return false;
+                }
+
+                // Slide 2 - Install DB Slide -> Important to put databaseActive === false if not it will loop this again
+                if (currentIndex === 2 && resultSummary[2] == null) {
+                    var data = new Array();
+                    $(".database-form").each(function() {
+                        data.push($(this).val())
+                    });
+                    var loadingDialog = PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Loading("Request to install database, please wait!");
+                    $.post('/install/SaveDb', { hostname: data[0], username: data[1], password: data[2], dbname: data[3] }, function(result) {
+                        loadingDialog.setMessage("Installing database...");
+                        obj = jQuery.parseJSON(result);
+                        loadingDialog.close();
+                        if (obj.result === 101) {
+                            resultSummary[2] = obj.message + ".......Success!";
+                            console.log("Save DB: " + obj.message);
+                            // Go to next step
+                            form.children("div").steps("setStep", 3);
+                        } else {
+                            PHPEasy.Plugins.Custom.Bootstrap.Dialog.Alert.Fail("Error " + obj.result + ": \n" + obj.message);
+                            return false;
+                        }
+                    });
+                    return false;
+                }
+
+                form.validate().settings.ignore = ":disabled,:hidden";
+                return form.valid();
+            },
+
+            onStepChanged: function(event, currentIndex, priorIndex) {
+                // Post Step to Save
+                $.post('/install/SaveCurrentStep', { currentStep: currentIndex });
+            },
+
+            onFinishing: function(event, currentIndex) {
+                form.validate().settings.ignore = ":disabled";
+                return form.valid();
+            },
+
+            onFinished: function(event, currentIndex) {
+                alert("Submitted!");
+            }
+        });
+    });
+})(jQuery);

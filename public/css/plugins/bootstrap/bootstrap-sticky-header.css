@@ -1,0 +1,65 @@
+    .normal_header {}
+    
+    .normal_header .navbar-fixed {
+        position: fixed !important;
+        width: 100% !important;
+        z-index: 1;
+    }
+    
+    .normal_header .navbar-transparent {
+        margin-top: 0px !important;
+    }
+    
+    .sticky_header {
+        position: -webkit - sticky;
+        position: sticky;
+        top: 0;
+        z-index: 16;
+        border-bottom: 1 px solid var (--base - dark);
+        box-shadow: 0 .25 rem .25 rem var (--base - shadow);
+        will-change: transform;
+        transform: translateY(0);
+        transition: transform .4 s ease - out;
+        -webkit-transition-duration: 0.5s;
+        transition-duration: 0.5s;
+    }
+    
+    .sticky_header-hidden {
+        transform: translateY(-100%);
+    }
+    /* Navbar transparent at top */
+    
+    @media only screen and (min-width: 768px) {
+        .navbar-transparent {
+            background: transparent !important;
+            border-color: transparent !important;
+            margin-top: -55px !important;
+            -webkit-box-shadow: none !important;
+            box-shadow: none !important;
+            /*border-width: 0px !important;*/
+        }
+        .navbar-transparent .nav li.active a,
+        .navbar-transparent .nav li.open a {
+            background: transparent !important;
+            color: #008eff !important;
+            border-bottom: thin solid #33a5ff;
+        }
+        .navbar-transparent .nav li.open ul li a {
+            border-bottom: none;
+        }
+        .navbar-transparent .nav li a,
+        .navbar-transparent a.navbar-brand,
+        .navbar-transparent .nav li p {
+            color: #d5dbdb !important;
+        }
+        .navbar-transparent .nav li a:hover,
+        .navbar-transparent a.navbar-brand:hover {
+            color: #008eff !important;
+        }
+        .navbar-transparent .nav li.open ul li a {
+            color: #9c9c9c !important;
+        }
+        .navbar-transparent .nav li.open ul li a:hover {
+            color: #0063b3 !important;
+        }
+    }

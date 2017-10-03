@@ -1,0 +1,33 @@
+1. Download & Install VSCode: https://code.visualstudio.com/
+
+2. Download & Install Git: https://git-scm.com/download/win
+
+PS D:\Work\Project\PHPEasyTemplateV1> git config --global core.editor "code --wait"
+PS D:\Work\Project\PHPEasyTemplateV1> git config --global -e
+PS D:\Work\Project\PHPEasyTemplateV1> git config --global user.name "YOUR NAME"
+PS D:\Work\Project\PHPEasyTemplateV1> git config --global user.email "YOUR EMAIL"
+
+3. Download & Install PHP: http://php.net/downloads.php
+
+4. Edit Environment with PHP Path
+
+Search Edit Environment -> System Properties -> Environment Variables -> Path -> Edit -> New -> Path Of PHP (Ex: C:\php)
+
+5. Clone File
+
+F1 -> >Git:Clone -> Enter URL -> Clone
+
+6. Install Extension:
+
+FTP-Simple
+FTP-Sync
+Gitflow
+PHP Code Format
+PHP Debug
+PHP Extension Pack
+PHP Formatter
+PHP Intellisense
+PHP Intellisense - Crane
+PHP-Autocomplete
+PHP Code Format
+vscode-todo

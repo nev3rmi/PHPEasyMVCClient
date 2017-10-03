@@ -1,0 +1,15 @@
+.panel-nav .glyphicon {
+    margin-right: 10px;
+}
+
+.panel-nav .panel-body {
+    padding: 0px;
+}
+
+.panel-nav .panel-body table tr td {
+    padding-left: 15px
+}
+
+.panel-nav .panel-body .table {
+    margin-bottom: 0px;
+}

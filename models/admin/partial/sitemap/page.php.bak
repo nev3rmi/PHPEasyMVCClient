@@ -1,0 +1,286 @@
+<?php
+namespace PHPEasy\Models\Admin;
+use PHPEasy\Cores as Cores;
+use PHPEasy\Models as Models;
+
+class Page extends Models\Admin{
+    function GetDataForPageTable(){
+        // Init
+        $ajax = array();
+        $data = array();
+        $queryString = "SELECT * FROM Function a 
+                        RIGHT JOIN Controller b ON a.ControllerId = b.ControllerId
+                        ORDER BY b.ControllerName, a.FunctionName";
+        $arraySearch = array();
+        $getData = $this -> db -> Select($queryString, $arraySearch);
+        foreach ($getData as $returnData){
+            foreach($returnData as $key => $value){
+                $row[$key] = $value;
+            }
+            /* Edit HERE */
+            $editActionColummn = '<a href="javascript:;" class="btn btn-sm btn-success" onclick="PHPEasy.Page.Sitemap.Admin.Pages.Page.getFormToAddUpdatePage('.$returnData['FunctionId'].')" data-toggle="tooltip" title="Edit Page Id: '.$returnData['FunctionId'].'"><i class="fa fa-pencil" aria-hidden="true"></i></a>';
+            $deleteActionColumn = '<a href="javascript:;" class="btn btn-sm btn-danger" onclick="PHPEasy.Page.Sitemap.Admin.Pages.Page.deletePage('.$returnData['FunctionId'].')" data-toggle="tooltip" title="Delete Page Id: '.$returnData['FunctionId'].'"><i class="fa fa-trash" aria-hidden="true"></i></a>';
+            $viewGroupColumn = '<a href="javascript:;" class="btn btn-sm btn-primary" onclick="PHPEasy.Page.Sitemap.Admin.Pages.Page.getPermissionGroup('.$returnData['FunctionId'].')" data-toggle="tooltip" data-html="true" title="View Group & Permission <br> Page Id: '.$returnData['FunctionId'].'"><i class="fa fa-lock" aria-hidden="true"></i></a>';
+            $editPageColumn = '<a href="javascript:;" class="btn btn-sm btn-warning" onclick="PHPEasy.Page.Sitemap.Admin.Pages.Page.CMS.showListOfContent('.$returnData['FunctionId'].')" data-toggle="tooltip" data-html="true" title="Edit Content Of Page Id: '.$returnData['FunctionId'].'"><i class="fa fa-arrows" aria-hidden="true"></i></a>';
+            $viewPageColumn = '<a data-view-page-id="'.$returnData['FunctionId'].'" href="'.$returnData['PageUrl'].'" target="_blank" class="btn btn-sm btn-info" data-toggle="tooltip" data-html="true" title="Go to Page Id: '.$returnData['FunctionId'].'"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+
+            $row["Action"] = ($returnData['FunctionId'] !== null) ? $viewGroupColumn.$editActionColummn.$deleteActionColumn.$editPageColumn.$viewPageColumn : null;
+            $row["PageRowId"] = "row_controller_".$returnData['ControllerId']."_page_".$returnData['FunctionId'];
+
+            /* End Edit */
+
+            $data[] = $row;
+        }
+        // Prepare Ajax
+        $ajax["draw"] = 1;
+        $ajax["recordsTotal"] = count($getData);
+        $ajax["recordsFiltered"] = count($getData);
+        $ajax["data"] = $data;
+
+        return $ajax;
+        
+    }
+
+    function GetData($functionId){
+        $data = $this -> db -> Select(" SELECT  `FunctionId` ,  `FunctionName` ,  `a`.`ControllerId` ,  `b`.`ControllerName`, `PageUrl`
+                                        FROM  `Function` a,  `Controller` b
+                                        WHERE  `a`.`ControllerId` =  `b`.`ControllerId` 
+                                        AND  `FunctionId` = :functionId
+                                    ", array(":functionId" => $functionId), false);
+        return $data;
+    }
+
+    function Run($data){
+        $this -> _data = $data;
+        if (empty($this -> _data['functionId'])){
+            return $this -> AddNewPage();
+        }else{
+            return $this -> UpdatePage();
+        }
+    }
+    
+    // TODO: Need to make sure non of functionName or pageUrl exist before insert
+    // Maybe: Insert('Function', $this->_data, 'SELECT * FROM `Function` WHERE `FunctionName` LIKE :functionName', array(':functionName' => 'NONE')) // Build Dynamiclly
+    private function AddNewPage(){
+        try{
+            return $this -> db -> Insert('Function', $this -> _data, "SELECT `FunctionName` FROM `Function` WHERE (`PageUrl` = :pageUrl OR `PageUrl` = :PageUrlIndex)", 
+                array(
+                    ":pageUrl" => $this -> _data['pageUrl'],
+                    ":PageUrlIndex" => $this -> _data['pageUrl'].'/index'
+                )
+            );
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+        
+    }
+    private function UpdatePage(){
+        try{
+            $checkIfExist = $this -> db -> Select("SELECT `FunctionName` FROM `Function` WHERE `FunctionId` <> :functionId AND (`PageUrl` = :pageUrl OR `PageUrl` = :PageUrlIndex)", 
+                array(
+                    ":functionId" => $this -> _data['functionId'],
+                    ":pageUrl" => $this -> _data['pageUrl'],
+                    ":PageUrlIndex" => $this -> _data['pageUrl'].'/index'
+                )
+            );
+            if (count($checkIfExist) === 0){
+                return $this -> db -> Update('Function', 
+                                                        array(
+                                                            'FunctionName' => $this -> _data['functionName'],
+                                                            'ControllerId' => $this -> _data['controllerId'],
+                                                            'PageUrl' => $this -> _data['pageUrl']
+                                                        ), 
+                                                        '`FunctionId` = :FunctionId', array(':FunctionId' => $this -> _data['functionId']));
+            }
+            return 'Function is already exist!';
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+    }
+
+    function DeletePage($functionId){
+        try{
+            $data = $this -> db -> Delete('DELETE FROM `Function` WHERE `FunctionId` = :FunctionId', array(':FunctionId' => $functionId));
+            $data2 = $this -> db -> Delete('DELETE FROM `FunctionPermission` WHERE `FunctionId` = :FunctionId', array(':FunctionId' => $functionId));
+            if (!$data  || !$data2){
+                return 'Result Delete from `Function` Table: '. $data . ', from `FunctionPermission` Table: '. $data2.'.'; 
+            }
+            return true;
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+    }
+
+    function GetPageGroupPermission($functionId){ 
+          // Init
+        $ajax = array();
+        $data = array();
+        $queryString = "SELECT a.`FunctionId` , a.`GroupId` , b.`GroupName` , SUM(  `Value` ) AS  `TotalPermission` 
+                        FROM  `FunctionPermission` a
+                        JOIN  `Group` b ON a.`GroupId` = b.`GroupId` 
+                        WHERE `a`.`FunctionId` = :functionId 
+                        GROUP BY  `a`.`FunctionId` ,  `a`.`GroupId` ";
+        $arraySearch = array(":functionId" => $functionId);
+        $getData = $this -> db -> Select($queryString, $arraySearch);
+        foreach ($getData as $returnData){
+            foreach($returnData as $key => $value){
+                $row[$key] = $value;
+            }
+            /* Edit HERE */
+
+            // Encrypt Data
+            $generateKey = array(
+                'FunctionId' => $returnData['FunctionId'],
+                'GroupId' => $returnData['GroupId'],
+                'TotalPermission' => $returnData['TotalPermission']
+            );
+
+            $permissionKey = Cores\_Security::EncryptObject($generateKey);
+
+            $viewGroupColumn = '<a href="javascript:;" class="btn btn-sm btn-primary" onclick="PrivatePagePermission.getGroupPagePermission(\''.$permissionKey.'\')" data-toggle="tooltip" data-html="true" title="Edit Permission <br> Group Id: '.$returnData['GroupId'].'"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+            $deleteActionColumn = '<a href="javascript:;" class="btn btn-sm btn-danger" onclick="PrivatePagePermission.deleteGroupPagePermission('.$returnData['GroupId'].')" data-toggle="tooltip" data-html="true" title="Delete Permission <br> Group Id: '.$returnData['GroupId'].'"><i class="fa fa-trash" aria-hidden="true"></i></a>';
+
+            $row["Action"] =  $viewGroupColumn.$deleteActionColumn;
+            $row["ControllerRowId"] = "row_".$returnData['FunctionId'];
+            /* End Edit */
+
+            $data[] = $row;
+        }
+        // Prepare Ajax
+        $ajax["draw"] = 1;
+        $ajax["recordsTotal"] = count($getData);
+        $ajax["recordsFiltered"] = count($getData);
+        $ajax["data"] = $data;
+
+        return $ajax;
+    }
+
+    function AllowThisGroupToGetPerm($groupId, $permissionValue){
+        try{
+
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+        $permissionConst = Cores\_Site::GetConst('PHPEasy\Cores\_Permission');
+        $arrayFlipConst = array_flip($permissionConst);
+        $functionId = Cores\_Session::Get('PageGroupPerm-FunctionId');
+        $data = array(
+            'Name' => $arrayFlipConst[$permissionValue],
+            'Description' => 'Allow Group '.$groupId.' to '.$arrayFlipConst[$permissionValue].' functionId '.$functionId,
+            'GroupId' => $groupId,
+            'FunctionId' => $functionId,
+            'Value' => $permissionValue
+        );
+        return $this -> db -> Insert('FunctionPermission', $data, array('GroupId', 'FunctionId', 'Value'), array(), array($groupId, $functionId, $permissionValue));
+    }
+
+    function RemoveThisGroupToGetPerm($groupId, $permissionValue){
+        try{
+            $functionId = Cores\_Session::Get('PageGroupPerm-FunctionId');
+            $array = array(
+                ':groupId' => $groupId,
+                ':functionId' => $functionId,
+                ':value' => $permissionValue
+            );
+            return $this -> db -> Delete('DELETE FROM `FunctionPermission` WHERE `GroupId` = :groupId AND `FunctionId` = :functionId AND `Value` = :value', $array);
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+        
+    }
+
+    function GetSearchingGroupCurrentlyNotInPage($param){
+        // Log
+        (new Cores\_Log("PHPEasy\Controllers", "PHPEasy\Controllers\Admin", "GETJSONAllGroupThatIsNotCurrentlyInPage")) -> WriteLog('Passed Param to Model: ', $param);
+        // Get FunctionId
+        $functionId = Cores\_Session::Get('PageGroupPerm-FunctionId');
+        // Init
+        $ajax = array();
+        $data = array();
+        $queryString = "SELECT * FROM `Group` a WHERE `GroupId` NOT IN (SELECT `GroupId` FROM `FunctionPermission` WHERE `FunctionId` = :functionId)";
+        $arraySearch = array();
+        $arraySearch[':functionId'] = $functionId;
+        if ($param !== 'All'){
+            $queryString .= " AND `GroupName` LIKE :groupName";
+            $arraySearch[':groupName'] = '%'.$param.'%';
+        }
+        $getData = $this -> db -> Select($queryString, $arraySearch);
+        (new Cores\_Log("PHPEasy\Controllers", "PHPEasy\Controllers\Admin", "GETJSONAllGroupThatIsNotCurrentlyInPage")) -> WriteLog('Load Data in Model: ', json_encode($getData));
+        foreach ($getData as $returnData){
+            $data[] = array(
+                "id" => $returnData['GroupId'],
+                "text" => $returnData['GroupName']
+            );
+        }
+       
+        $ajax['items'] = $data;
+        return $ajax;
+    }
+
+    function GetTotalPermissionOfGroup($groupId){
+        $functionId = Cores\_Session::Get('PageGroupPerm-FunctionId');
+        $array = array(
+            ":groupId" => $groupId,
+            ":functionId" => $functionId
+        );
+        $result = $this -> db -> Select(" SELECT SUM(`Value`) AS 'TotalPermission' 
+                                FROM  `FunctionPermission` 
+                                WHERE  `GroupId` = :groupId
+                                AND  `FunctionId` = :functionId
+                             ", $array, false);
+
+        return $result['TotalPermission'];
+    }
+
+    function GetThisGroupPermission($key){
+        $consts = Cores\_Site::GetConst('PHPEasy\Cores\_Permission');
+        $result = array();
+
+        $permission = new Cores\_Permission;
+        $permission -> Set($key);
+
+        foreach ($consts as $key => $value){
+            $result[$key] = $permission -> Get($value);
+        }
+
+        return $result;
+    }
+
+    function GetSearchingController($param){
+        // Log
+        (new Cores\_Log("PHPEasy\Controllers", "PHPEasy\Controllers\Admin", "POSTAvailableController")) -> WriteLog('Passed Param to Model: ', $param);
+        // Init
+        $ajax = array();
+        $data = array();
+        $queryString = "SELECT * FROM `Controller`";
+        $arraySearch = array();
+        if ($param !== 'All'){
+            $queryString .= " WHERE `ControllerName` LIKE :controllerName";
+            $arraySearch = array(":controllerName" => '%'.$param.'%');
+        }
+        $getData = $this -> db -> Select($queryString, $arraySearch);
+        (new Cores\_Log("PHPEasy\Controllers", "PHPEasy\Controllers\Admin", "POSTAvailableController")) -> WriteLog('Load Data in Model: ', json_encode($getData));
+        foreach ($getData as $returnData){
+            $data[] = array(
+                "id" => $returnData['ControllerId'],
+                "text" => $returnData['ControllerName']
+            );
+        }
+       
+        $ajax['items'] = $data;
+        return $ajax;
+    }
+
+    function DeleteGroupPagePermission($data){
+        try{
+            $array = array(
+                ':groupId' => $data['groupId'],
+                ':functionId' => $data['functionId']
+            );
+            return $this -> db -> Delete('DELETE FROM `FunctionPermission` WHERE `GroupId` = :groupId AND `FunctionId` = :functionId ', $array);
+        }catch (\Exception $e){
+            return $e -> getMessage();
+        }
+    }
+}
+?>
