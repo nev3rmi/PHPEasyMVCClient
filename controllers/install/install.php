@@ -11,9 +11,9 @@ class Install extends Cores\_Controller{
 	}
 
 	private function Init(){
-		$this -> info['version'] = '1.0.6.5.Beta1';
-		$this -> info['server'] = 'http://codeasy.cf/api/version/check';
-		$this -> info['update'] = 'http://update.codeasy.cf';
+		$this -> info['version'] = '1.0.6.5.Beta2';
+		$this -> info['serverLink'] = 'http://codeasy.cf/api/version/check';
+		$this -> info['serverPackageLink'] = 'http://update.codeasy.cf';
 	}
 
     function Index(){
@@ -25,7 +25,11 @@ class Install extends Cores\_Controller{
     }
 
 	function GetCurrentStep(){
+		
 		$this -> view -> content(json_encode($this -> model -> GetCurrentStep(), true));
+		// $return = array();
+		// $return['step'] = 1;
+		// $this -> view -> content(json_encode($return['step']));
 	}
 
 	function SaveCurrentStep(){
@@ -42,7 +46,34 @@ class Install extends Cores\_Controller{
 		}
 	}
 
-    function SaveKey(){
+    // function SaveKey(){
+	// 	$result = null;
+    //     try{
+	// 		$form = new Cores\_Form;
+	// 		$form 	-> Post('key')
+	// 					-> Validate('Regex', Cores\_Setting::_regexGerneral255)	
+	// 				-> Submit();
+	// 		$data = $form -> Fetch();
+	// 		$key = $this -> model -> SaveKey($data);
+	// 		$res = $this -> model -> createSystemFile($this -> info);
+
+	// 		if($key['result'] != '101'){
+	// 			throw new \Exception ('1'.$key['message']);
+	// 		}
+			
+	// 		if ($res['result'] != '101'){
+	// 			throw new \Exception ('2'.$res['message']);
+	// 		}
+			
+	// 		$result = $key;
+	// 	}catch(\Exception $e){
+	// 		$result = $this -> model -> ObjReturnCode(202, $e -> getMessage());
+	// 	}finally{
+	// 		$this -> view -> content(json_encode($result));
+	// 	}
+	// }
+	
+	function SaveKey(){
 		$result = null;
         try{
 			$form = new Cores\_Form;
@@ -50,9 +81,17 @@ class Install extends Cores\_Controller{
 						-> Validate('Regex', Cores\_Setting::_regexGerneral255)	
 					-> Submit();
 			$data = $form -> Fetch();
-			$key = $this -> model -> SaveKey($data);
-			$this -> model -> createSystemFile($this -> info);
-			$result = $key;
+			
+			$keys[0] = $this -> model -> SaveKey($data);
+			$keys[1] = $this -> model -> CreateSystemFile($this -> info);
+
+			foreach($keys as $key => $value){
+				if ($value['result'] != 101){
+					throw new \Exception ($value['message']);
+				} 
+			}
+
+			$result = $this -> model -> ObjReturnCode(101, "Stage 1: Done.");
 		}catch(\Exception $e){
 			$result = $this -> model -> ObjReturnCode(202, $e -> getMessage());
 		}finally{

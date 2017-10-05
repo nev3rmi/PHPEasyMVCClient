@@ -31,3 +31,7 @@ PHP Intellisense - Crane
 PHP-Autocomplete
 PHP Code Format
 vscode-todo
+
+6. FAQ
+    1. Not uploading on save
+    - I set "uploadOnSave" under "generatedFiles" to false, after which it worked as expected.
