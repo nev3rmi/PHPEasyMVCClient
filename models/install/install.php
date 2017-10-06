@@ -110,11 +110,33 @@ class Install extends Cores\_Model{
         return  $obj = $this -> ObjReturnCode(101, 'Save GoogleCaptchaKey Successful!');
     }
 
-    function createSystemFile($siteInfo){
-        $getPrivateKey = Cores\_Security::GetKey('privateKey');
-        $getSalt = Cores\_Security::GetKey('salt');
-        Cores\_Security::EncryptData ($siteInfo, $getPrivateKey, $getSalt);
-        Cores\_Security::SaveKey('system',$siteInfo);
+    // function createSystemFile($siteInfo){
+    //     try{
+    //         $getPrivateKey = Cores\_Security::GetKey('privateKey');
+    //         $getSalt = Cores\_Security::GetKey('salt');
+    //         $encryptedData = Cores\_Security::EncryptData ($siteInfo, $getPrivateKey, $getSalt);
+    //         Cores\_Security::SaveKey('system',$encryptedData);
+
+    //         $obj = $this -> ObjReturnCode(101, 'CreateSystemFile Successful!');
+        
+    //     }catch(\Exception $e){
+    //         $obj = $this -> ObjReturnCode(201, "CreateSystemFile Failed: ". $e-> GetMessage());
+    //     }finally{
+    //         return $obj;
+    //     }
+    // }
+    function CreateSystemFile($siteInfo){
+        try{
+            $getPrivateKey = Cores\_Security::GetKey('privateKey');
+            $getSalt = Cores\_Security::GetKey('salt');
+            Cores\_Security::SaveKey('system', Cores\_Security::EncryptData (json_encode($siteInfo), $getPrivateKey, $getSalt));
+            $obj = $this -> ObjReturnCode(101, 'CreateSystemFile Successful!');
+        }catch(\Exception $e){
+            $obj = $this -> ObjReturnCode(201, "CreateSystemFile Failed: ". $e-> GetMessage());
+        }finally{
+            return $obj;
+        } 
+        
     }
 }
 ?>

@@ -5,7 +5,7 @@ class _Setting{ // Site Setting
 	// => 0-None, 1-Use
 	const _useHTTPs = 0; // Learn how to make a free SSL: http://www.selfsignedcertificate.com/
 	const _useGzipCompress = 1;
-	const _useDebug = 1; // 0 - Off, 1 - Simple, 2 - All
+	const _useDebug = 0; // 0 - Off, 1 - Simple, 2 - All
 
 	// Developer Config
 	const _switchSecurity = 1; // 1 - ON, 0 - OFF

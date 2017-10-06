@@ -1,8 +1,8 @@
 {
-    "remotePath": "/phpeasy/",
-    "host": "103.9.158.172",
-    "username": "ohhay",
-    "password": "C9oPabRX",
+    "remotePath": "/htdocs/",
+    "host": "ftp.unaux.com",
+    "username": "unaux_20775212",
+    "password": "123asd123",
     "port": 21,
     "secure": false,
     "protocol": "ftp",
