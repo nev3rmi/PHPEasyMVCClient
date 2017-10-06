@@ -93,7 +93,9 @@ abstract class _Controller{
 	
 		return $_shortcode;
 	}
-	
+	/**
+	*	
+	*/
 	function LoadModel($name, $modelPath = 'models/', $namespace = null){
 		try{
 			$loadResult = null;
@@ -165,6 +167,7 @@ abstract class _Controller{
 				$params[0] = 'index';
 			}
 			$path = $partialPath.'.php';
+			// var_dump($path);
 			if (file_exists($path)){
 				
 				require_once $path;
