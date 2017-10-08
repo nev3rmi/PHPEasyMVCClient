@@ -1,0 +1,77 @@
+<ul dnd-list="list.people"
+    dnd-allowed-types="list.allowedTypes"
+    dnd-disable-if="list.people.length >= list.max">
+
+    <li ng-repeat="person in list.people"
+        dnd-draggable="person"
+        dnd-type="person.type"
+        dnd-disable-if="person.type == 'unknown'"
+        dnd-moved="list.people.splice($index, 1)"
+        class="background-{{person.type}}"
+        >
+        <dnd-nodrag>
+          <div dnd-handle class="handle">:::</div>
+          <div class="name">
+              <input type="text" ng-model="person.name" class="background-{{person.type}} form-control input-sm" />
+			  <input type="text" ng-model="person.resource" class="background-{{person.type}} form-control input-sm" />
+			  <select class="user-email-address" name="email" style='width: 200px'></select>
+          </div>
+        </dnd-nodrag>
+    </li>
+
+    <li class="dndPlaceholder">
+        Drop any <strong>{{list.allowedTypes.join(' or ')}}</strong> here
+    </li>
+
+</ul>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+    /*$('.user-email-address').change(function(e) {
+        $('#output').append('<p>' + $(this).val() + "</p>");
+    });*/
+    $('.user-email-address').select2({
+        placeholder: "Type an email address",
+        ajax: {
+            url: '/dev/lab/exttest/jsgantt/demo/echo/json.txt',
+            dataType: 'json',
+            type: 'POST',
+            delay: 250,
+            data: function(params) {
+                return {
+                    json: '[{"id":"apple@apple.com","email":"apple@apple.com"},{"id":"pear@apple.com","email":"pear@apple.com"},{"id":"orange@apple.com","email":"orange@apple.com"},{"id":"lemon@apple.com","email":"lemon@apple.com"},{"id":"lime@apple.com","email":"lime@apple.com"}]',
+                    delay: 0
+                };
+            },
+            processResults: function(data, params) {
+                var payload = {
+                    results: data
+                };
+                return payload;
+            },
+            cache: true
+        },
+        templateResult: function(result) {
+            return result.email;
+        },
+        templateSelection: function(selection) {
+            return selection.email;
+        },
+        minimumInputLength: 2
+    });
+    /*$('#set-email-manually').click(function(e) {
+
+        e.preventDefault();
+        
+        // THIS DOESN'T WORK PROPERLY!?
+        
+        $('#user-email-address')
+            .empty()
+            .append('<option selected value="test@test.com">test@test.com</option>');
+        $('#user-email-address').trigger('change');
+        
+    });*/
+
+});
+</script>
