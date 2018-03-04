@@ -70,7 +70,7 @@ class Install extends Cores\_Model{
     function CheckKeyLicense($data){
         $curl = new Cores\_CUrl;
 
-        $result = $curl -> Send('http://codeasy.cf/api/License/RequestActiveLicense', array(
+        $result = $curl -> Send('http://picks.work/api/License/RequestActiveLicense', array(
             'key' => $data['key'],
             'ip' => $data['ip'],
             'url' => $data['url']

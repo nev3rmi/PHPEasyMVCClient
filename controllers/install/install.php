@@ -12,8 +12,8 @@ class Install extends Cores\_Controller{
 
 	private function Init(){
 		$this -> info['version'] = '1.0.6.5.Beta2';
-		$this -> info['serverLink'] = 'http://codeasy.cf/api/version/check';
-		$this -> info['serverPackageLink'] = 'http://update.codeasy.cf';
+		$this -> info['serverLink'] = 'http://picks.work/api/version/check';
+		$this -> info['serverPackageLink'] = 'http://update.picks.work';
 	}
 
     function Index(){
